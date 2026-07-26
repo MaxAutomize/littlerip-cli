@@ -1,0 +1,34 @@
+{
+  "name": "littlerip",
+  "version": "1.0.0",
+  "description": "A tiny CLI that makes your terminal say littlerip.",
+  "bin": {
+    "littlerip": "bin/littlerip"
+  },
+  "files": [
+    "bin/littlerip",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "sh test/test.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaxAutomize/littlerip-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MaxAutomize/littlerip-cli/issues"
+  },
+  "homepage": "https://github.com/MaxAutomize/littlerip-cli#readme",
+  "keywords": [
+    "cli",
+    "terminal",
+    "littlerip"
+  ],
+  "author": "Max Rippley",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
