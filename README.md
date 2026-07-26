@@ -1,6 +1,6 @@
 # littlerip
 
-A tiny command that turns the terminal into one word:
+A tiny open-source command that turns the terminal into one word:
 
 ```text
 littlerip
@@ -8,22 +8,15 @@ littlerip
 
 ## Install
 
-### macOS or Linux — no Node.js required
+Install LittleRip globally with npm:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/MaxAutomize/littlerip-cli/main/install.sh | sh
+npm install --global littlerip
 ```
 
-Open a new terminal if the installer asks you to, then run:
+Then run it from any directory:
 
 ```sh
-littlerip
-```
-
-### With npm
-
-```sh
-npm install --global github:MaxAutomize/littlerip-cli
 littlerip
 ```
 
@@ -36,12 +29,15 @@ littlerip --help
 littlerip --version
 ```
 
+## Requirements
+
+- Node.js 18 or newer
+- macOS, Linux, or Windows
+
 ## Uninstall
 
-For the script installation:
-
 ```sh
-rm -f "$HOME/.local/bin/littlerip"
+npm uninstall --global littlerip
 ```
 
 ## License

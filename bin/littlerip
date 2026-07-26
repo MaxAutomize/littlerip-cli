@@ -1,69 +1,90 @@
-#!/bin/sh
+#!/usr/bin/env node
 
-VERSION="1.0.0"
+'use strict';
 
-case "${1-}" in
-  "") ;;
-  -v|--version)
-    printf '%s\n' "$VERSION"
-    exit 0
-    ;;
-  -h|--help)
-    printf '%s\n' \
-      'Usage: littlerip' \
-      '' \
-      'Opens a terminal screen that says littlerip.' \
-      'Press Ctrl+C to leave.'
-    exit 0
-    ;;
-  *)
-    printf 'littlerip: unknown option: %s\n' "$1" >&2
-    printf 'Try littlerip --help\n' >&2
-    exit 2
-    ;;
-esac
+const { version } = require('../package.json');
 
-# Keep redirected output simple and useful.
-if [ ! -t 0 ] || [ ! -t 1 ]; then
-  printf '%s\n' 'littlerip'
-  exit 0
-fi
+const WORD = 'littlerip';
+const args = process.argv.slice(2);
 
-saved_terminal_settings=$(stty -g 2>/dev/null || true)
+if (args.length > 0) {
+  const option = args[0];
 
-cleanup() {
-  if [ -n "$saved_terminal_settings" ]; then
-    stty "$saved_terminal_settings" 2>/dev/null || true
-  fi
-  printf '\033[?25h\033[?1049l'
+  if (option === '-v' || option === '--version') {
+    process.stdout.write(`${version}\n`);
+    process.exit(0);
+  }
+
+  if (option === '-h' || option === '--help') {
+    process.stdout.write([
+      'Usage: littlerip',
+      '',
+      'Opens a terminal screen that says littlerip.',
+      'Press Ctrl+C to leave.',
+      '',
+    ].join('\n'));
+    process.exit(0);
+  }
+
+  process.stderr.write(`littlerip: unknown option: ${option}\n`);
+  process.stderr.write('Try littlerip --help\n');
+  process.exit(2);
 }
 
-render() {
-  cols=$(tput cols 2>/dev/null || printf '80')
-  rows=$(tput lines 2>/dev/null || printf '24')
-
-  case "$cols" in *[!0-9]*|'') cols=80 ;; esac
-  case "$rows" in *[!0-9]*|'') rows=24 ;; esac
-  [ "$cols" -lt 1 ] && cols=80
-  [ "$rows" -lt 1 ] && rows=24
-
-  word='littlerip'
-  word_length=9
-  row=$(( (rows + 1) / 2 ))
-  col=$(( (cols - word_length) / 2 + 1 ))
-  [ "$col" -lt 1 ] && col=1
-
-  printf '\033[2J\033[H\033[%s;%sH%s' "$row" "$col" "$word"
+// Keep redirected output simple and useful.
+if (!process.stdin.isTTY || !process.stdout.isTTY) {
+  process.stdout.write(`${WORD}\n`);
+  process.exit(0);
 }
 
-trap cleanup EXIT
-trap 'exit 0' HUP INT TERM
-trap render WINCH
+let cleanedUp = false;
+let rawModeEnabled = false;
 
-# Use the terminal's alternate screen so the original prompt returns cleanly.
-printf '\033[?1049h\033[?25l'
-[ -n "$saved_terminal_settings" ] && stty -echo 2>/dev/null || true
-render
+function render() {
+  const columns = Math.max(1, process.stdout.columns || 80);
+  const rows = Math.max(1, process.stdout.rows || 24);
+  const row = Math.max(1, Math.floor((rows + 1) / 2));
+  const column = Math.max(1, Math.floor((columns - WORD.length) / 2) + 1);
 
-# Stay open without showing anything the user happens to type.
-while :; do sleep 1; done
+  process.stdout.write(`\u001b[2J\u001b[H\u001b[${row};${column}H${WORD}`);
+}
+
+function cleanup() {
+  if (cleanedUp) return;
+  cleanedUp = true;
+
+  process.stdout.off('resize', render);
+
+  if (rawModeEnabled) {
+    process.stdin.setRawMode(false);
+  }
+
+  process.stdin.pause();
+  process.stdout.write('\u001b[?25h\u001b[?1049l');
+}
+
+function quit() {
+  cleanup();
+  process.exitCode = 0;
+}
+
+process.once('SIGINT', quit);
+process.once('SIGTERM', quit);
+process.once('SIGHUP', quit);
+process.once('exit', cleanup);
+process.stdout.on('resize', render);
+
+// Use the terminal's alternate screen so the original prompt returns cleanly.
+process.stdout.write('\u001b[?1049h\u001b[?25l');
+
+if (typeof process.stdin.setRawMode === 'function') {
+  process.stdin.setRawMode(true);
+  rawModeEnabled = true;
+}
+
+process.stdin.resume();
+process.stdin.on('data', (data) => {
+  if (data.includes(3)) quit();
+});
+
+render();
